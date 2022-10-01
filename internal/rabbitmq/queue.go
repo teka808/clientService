@@ -11,7 +11,7 @@ type mq struct {
 	channel *amqp.Channel
 }
 
-func Init() {
+func Init() *mq {
 	mq := new(mq)
 	mqConn, err := amqp.Dial(config.RABBITMQ_HOST)
 
@@ -20,9 +20,8 @@ func Init() {
 	}
 
 	mq.conn = mqConn
-
 	mq.OpenChannel()
-	mq.Consume()
+	return mq
 }
 
 func (mq *mq) OpenChannel() {
@@ -40,53 +39,20 @@ func (mq *mq) CloseChannel() {
 	defer mq.conn.Close()
 }
 
-func (mq *mq) Consume() {
-	//messages, err := mq.channel.Consume(
-	//	config.RABBITMQ_CONSUME_QUEUE, // queue name
-	//	"",                            // consumer
-	//	true,                          // auto-ack
-	//	false,                         // exclusive
-	//	false,                         // no local
-	//	false,                         // no wait
-	//	nil,                           // arguments
-	//)
-	//
-	//if err != nil {
-	//	log.Println(err)
-	//}
-	//log.Println("Successfully connected to RabbitMQ")
+func (mq *mq) Publish(message string) string {
 
-	//go func() {
-	//	for {
-	//		select {
-	//		case data := <-messages:
-	//
-	//			var info map[string]interface{}
-	//			e := json.Unmarshal(data.Body, &info)
-	//
-	//			if e != nil {
-	//				panic(e)
-	//			}
-	//
-	//			for _, v := range info {
-	//				coordinates := v.(map[string]interface{})["coordinates"]
-	//				latitude := 0.0
-	//				longitude := 0.0
-	//				if coordinates != nil {
-	//					latitude = v.(map[string]interface{})["coordinates"].([]interface{})[0].(float64)
-	//					longitude = v.(map[string]interface{})["coordinates"].([]interface{})[1].(float64)
-	//				}
-	//				db.InsertOrUpdate(
-	//					v.(map[string]interface{})["id"].(string),
-	//					v.(map[string]interface{})["type"].(string),
-	//					latitude,
-	//					longitude,
-	//					v.(map[string]interface{})["status"].(string),
-	//					v.(map[string]interface{})["timezone"].(string),
-	//				)
-	//				log.Println("Inserted/Updated data")
-	//			}
-	//		}
-	//	}
-	//}()
+	err := mq.channel.Publish(
+		"",                            // exchange
+		config.RABBITMQ_CONSUME_QUEUE, // routing key
+		false,                         // mandatory
+		false,                         // immediate
+		amqp.Publishing{
+			ContentType: "text/plain",
+			Body:        []byte(message),
+		})
+
+	if err != nil {
+		return "fail"
+	}
+	return "success"
 }

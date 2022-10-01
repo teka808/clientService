@@ -1,13 +1,16 @@
 package handlers
 
 import (
+	"bytes"
 	"fmt"
+	"io"
 	"io/ioutil"
 	"log"
 	"net/http"
 	"os"
 	"strconv"
 	"test/internal/config"
+	"test/internal/rabbitmq"
 	"test/internal/utils"
 )
 
@@ -128,4 +131,32 @@ func GetDevices(w http.ResponseWriter, r *http.Request) {
 		log.Fatal(err)
 	}
 	fmt.Fprintf(w, string(responseData))
+}
+
+func UploadHandler(w http.ResponseWriter, r *http.Request) {
+	file, _, err := r.FormFile("file")
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	defer file.Close()
+	buf := make([]byte, 1024)
+	var b bytes.Buffer
+	for {
+		n, err := file.Read(buf)
+		if err == io.EOF {
+			break
+		}
+		if err != nil {
+			fmt.Println(err)
+			continue
+		}
+		if n > 0 {
+
+			b.WriteString(string(buf[:n]))
+		}
+	}
+	mq := rabbitmq.Init()
+	fmt.Println(mq.Publish(b.String()))
 }

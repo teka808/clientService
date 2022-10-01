@@ -27,4 +27,5 @@ func (r *mRouter) setHandlers() {
 	r.router.HandleFunc("/devices/type/{type}", handlers.GetDeviceByTypeHandler).Methods("GET")
 	r.router.HandleFunc("/devices/status/{status}", handlers.GetDeviceByStatusHandler).Methods("GET")
 	r.router.HandleFunc("/devices", handlers.GetDevices).Methods("GET")
+	r.router.HandleFunc("/upload", handlers.UploadHandler).Methods("POST")
 }
